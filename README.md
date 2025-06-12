@@ -225,4 +225,4 @@ npm run dev -- --specs ./examples
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit issues and pull requests...maybe help me replace my awful logo.
+Contributions are welcome! Please feel free to submit issues and pull requests.
