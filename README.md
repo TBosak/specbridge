@@ -221,6 +221,7 @@ npm run build
 
 # Test locally
 npm run dev -- --specs ./examples
+```
 
 ## 🤝 Contributing
 
