@@ -1,8 +1,8 @@
 <p align="center">
   <img 
     src="https://github.com/TBosak/specbridge/blob/main/specbridge.png" 
-    width="25%" 
-    height="25%">
+    width="20%" 
+    height="20%">
 </p>
 An MCP server that turns OpenAPI specifications into MCP tools. Scan a folder for OpenAPI spec files and automatically generate corresponding tools. No configuration files, no separate servers - just drop specs in a folder and get tools.
 
