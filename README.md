@@ -3,6 +3,10 @@ An MCP server that turns OpenAPI specifications into MCP tools. Scan a folder fo
 
 Built with [FastMCP](https://www.npmjs.com/package/fastmcp) for TypeScript.
 
+<a href="https://glama.ai/mcp/servers/@TBosak/specbridge">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@TBosak/specbridge/badge" alt="Specbridge MCP server" />
+</a>
+
 ## ✨ Features
 
 - 🎯 **Zero Configuration**: Filesystem is the interface - just drop OpenAPI specs in a folder
