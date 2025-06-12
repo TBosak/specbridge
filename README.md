@@ -192,6 +192,8 @@ This creates tools named:
 
 3. Check the server logs for parsing errors
 
+> **Note:** Specbridge works best when you use absolute paths (with no spaces) for the `--specs` argument and other file paths. Relative paths or paths containing spaces may cause issues on some platforms or with some MCP clients.
+
 ### Authentication not working?
 
 1. Verify your `.env` file is in the specs directory
