@@ -233,4 +233,4 @@ npm test
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit issues and pull requests.
+Contributions are welcome! Please feel free to submit issues and pull requests...maybe help me replace my awful logo.
