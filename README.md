@@ -49,7 +49,7 @@ OPENAI_API_KEY=sk-your_openai_key
 
 ### 5. Add to MCP client configuration
 
-For Claude Desktop, add to your MCP configuration:
+For Claude Desktop or Cursor, add to your MCP configuration:
 
 ```json
 {
@@ -116,21 +116,6 @@ Tools are automatically named using this pattern:
 Examples:
 - `petstore_getPetById` (from operationId)
 - `github_get_user_repos` (generated from `GET /user/repos`)
-
-## Programmatic Usage
-
-You can also use the server programmatically:
-
-```typescript
-import { OpenAPIMCPServer } from 'specbridge';
-
-const server = new OpenAPIMCPServer({
-  specsPath: './api-specs',
-  transportType: 'stdio'
-});
-
-await server.start();
-```
 
 ## File Structure
 
@@ -243,7 +228,3 @@ npm test
 ## Contributing
 
 Contributions are welcome! Please feel free to submit issues and pull requests.
-
-## License
-
-MIT 
