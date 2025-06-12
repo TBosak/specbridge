@@ -1,0 +1,164 @@
+openapi: 3.0.0
+info:
+  title: GitHub API (Subset)
+  version: 1.0.0
+  description: A subset of the GitHub REST API for demonstration
+servers:
+  - url: https://api.github.com
+paths:
+  /user:
+    get:
+      operationId: getAuthenticatedUser
+      summary: Get the authenticated user
+      description: Get the authenticated user's public profile information
+      responses:
+        '200':
+          description: User profile
+        '401':
+          description: Requires authentication
+      security:
+        - bearerAuth: []
+  
+  /user/repos:
+    get:
+      operationId: listUserRepos
+      summary: List repositories for the authenticated user
+      description: Lists repositories that the authenticated user has explicit permission to access
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [all, owner, member]
+            default: all
+          description: Type of repositories to list
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [created, updated, pushed, full_name]
+            default: full_name
+          description: Sort order
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 30
+          description: Results per page
+      responses:
+        '200':
+          description: List of repositories
+        '401':
+          description: Requires authentication
+      security:
+        - bearerAuth: []
+  
+  /repos/{owner}/{repo}:
+    get:
+      operationId: getRepository
+      summary: Get a repository
+      description: Get a repository by owner and name
+      parameters:
+        - name: owner
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Repository owner
+        - name: repo
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Repository name
+      responses:
+        '200':
+          description: Repository information
+        '404':
+          description: Repository not found
+
+  /repos/{owner}/{repo}/issues:
+    get:
+      operationId: listRepoIssues
+      summary: List repository issues
+      description: List issues in a repository
+      parameters:
+        - name: owner
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Repository owner
+        - name: repo
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Repository name
+        - name: state
+          in: query
+          schema:
+            type: string
+            enum: [open, closed, all]
+            default: open
+          description: Issue state
+        - name: labels
+          in: query
+          schema:
+            type: string
+          description: Comma-separated list of label names
+      responses:
+        '200':
+          description: List of issues
+    
+    post:
+      operationId: createIssue
+      summary: Create an issue
+      description: Create a new issue
+      parameters:
+        - name: owner
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Repository owner
+        - name: repo
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Repository name
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title:
+                  type: string
+                  description: Issue title
+                body:
+                  type: string
+                  description: Issue body
+                labels:
+                  type: array
+                  items:
+                    type: string
+                  description: Labels to associate with the issue
+      responses:
+        '201':
+          description: Issue created
+        '422':
+          description: Validation failed
+      security:
+        - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer 
