@@ -213,7 +213,7 @@ This creates tools named:
 
 ```bash
 # Clone and install
-git clone <repository-url>
+git clone https://github.com/TBosak/specbridge.git
 cd specbridge
 npm install
 
