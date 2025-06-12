@@ -1,5 +1,10 @@
-# SpecBridge
-
+<p align="center">
+  <img 
+    src="https://github.com/TBosak/specbridge/blob/main/specbridge.png" 
+    width="25%" 
+    height="25%">
+</p>
+<h1 align="center">SpecBridge</h1>
 An MCP server that bridges OpenAPI specifications to MCP tools. Scan a folder for OpenAPI spec files and automatically generate corresponding tools. No configuration files, no separate servers - just drop specs in a folder and get tools.
 
 Built with [FastMCP](https://www.npmjs.com/package/fastmcp) for TypeScript.
