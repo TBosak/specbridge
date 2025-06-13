@@ -58,7 +58,7 @@ OPENAI_API_KEY=sk-your_openai_key
 
 For Claude Desktop or Cursor, add to your MCP configuration:
 
-If installed locally:
+If installed on your machine:
 ```json
 {
   "mcpServers": {
