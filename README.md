@@ -22,7 +22,7 @@ Built with [FastMCP](https://www.npmjs.com/package/fastmcp) for TypeScript.
 
 ## 🚀 Quick Start
 
-### 1️⃣ Install
+### 1️⃣ Install (optional)
 
 ```bash
 npm install -g specbridge
@@ -58,12 +58,25 @@ OPENAI_API_KEY=sk-your_openai_key
 
 For Claude Desktop or Cursor, add to your MCP configuration:
 
+If installed locally:
 ```json
 {
   "mcpServers": {
     "specbridge": {
       "command": "specbridge",
       "args": ["--specs", "/path/to/your/specs/folder"]
+    }
+  }
+}
+```
+
+Otherwise:
+```json
+{
+  "mcpServers": {
+    "specbridge": {
+      "command": "npx",
+      "args": ["-y", "specbridge", "--specs", "/absolute/path/to/your/specs"]
     }
   }
 }
@@ -96,7 +109,6 @@ specbridge list
 
 # List specs from custom folder
 specbridge list --specs ~/my-api-specs
-```
 
 ## 🔑 Authentication Patterns
 
