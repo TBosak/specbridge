@@ -109,7 +109,7 @@ specbridge list
 
 # List specs from custom folder
 specbridge list --specs ~/my-api-specs
-
+```
 ## 🔑 Authentication Patterns
 
 The server automatically detects authentication from environment variables using these patterns:
