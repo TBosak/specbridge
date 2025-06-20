@@ -1,6 +1,6 @@
 {
   "name": "specbridge",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "An MCP server that bridges OpenAPI specifications to MCP tools - scan a folder for spec files and automatically generate corresponding tools",
   "main": "dist/index.js",
   "bin": {

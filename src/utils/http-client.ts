@@ -35,7 +35,7 @@ export class HttpClient {
     // Build headers
     let headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      'User-Agent': 'specbridge/1.0.0'
+      'User-Agent': 'specbridge/1.0.2'
     };
     
     // Apply authentication

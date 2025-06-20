@@ -10,7 +10,7 @@ const program = new Command();
 program
   .name('specbridge')
   .description('Bridge OpenAPI specifications to MCP tools - automatically generates tools from OpenAPI specs')
-  .version('1.0.0')
+  .version('1.0.2')
   .option(
     '--specs <path>', 
     'Path to directory containing OpenAPI spec files',
@@ -48,7 +48,6 @@ program
       // Handle graceful shutdown
       const shutdown = async () => {
         console.log('\nShutting down...');
-        await server.stop();
         process.exit(0);
       };
       
@@ -90,12 +89,25 @@ program
       console.log(`Specs Directory: ${config.specsPath}`);
       console.log(`Loaded Specifications: ${specs.length}`);
       
+      // Show built-in tools
+      console.log('\n=== Built-in Spec Management Tools ===\n');
+      console.log('🔧 specbridge_list_specs - List all OpenAPI specification files');
+      console.log('📄 specbridge_get_spec - Get the content of a specific spec file');  
+      console.log('✏️ specbridge_update_spec - Update the content of a specific spec file');
+      console.log('⬇️ specbridge_download_spec - Download and save specs from URLs');
+      
+      console.log('\n=== Built-in APIs.guru Discovery Tools ===\n');
+      console.log('🏢 apisguru_getProviders - List API providers (Google, GitHub, Stripe, etc.)');
+      console.log('🔍 apisguru_getProvider - Get all APIs from a specific provider with download URLs');
+      console.log('📊 apisguru_getMetrics - Get directory statistics (total APIs, endpoints, providers)');
+      
       if (specs.length === 0) {
         console.log('\nNo OpenAPI specifications found.');
         console.log('Add .json, .yaml, or .yml files to the specs directory.');
       } else {
+        console.log('\n=== Generated API Tools ===\n');
         for (const spec of specs) {
-          console.log(`\n📋 ${spec.apiName.toUpperCase()}`);
+          console.log(`📋 ${spec.apiName.toUpperCase()}`);
           console.log(`   File: ${path.basename(spec.filePath)}`);
           console.log(`   Base URL: ${spec.tools[0]?.baseUrl || 'N/A'}`);
           console.log(`   Tools: ${spec.tools.length}`);
@@ -132,9 +144,7 @@ program
           console.log(`🔐 ${apiName.toUpperCase()}: ${auth.type}`);
         }
       }
-      
-      await server.stop();
-      
+            
     } catch (error) {
       console.error('Failed to list specs:', error);
       process.exit(1);

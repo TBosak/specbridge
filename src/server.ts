@@ -6,6 +6,7 @@ import { HttpClient } from './utils/http-client';
 import { loadAuthConfig } from './utils/auth';
 import fs from 'fs';
 import path from 'path';
+import axios from 'axios';
 
 function debugLog(message: string) {
   try {
@@ -28,8 +29,8 @@ export class OpenAPIMCPServer {
     
     this.fastMCP = new FastMCP({
       name: 'Specbridge',
-      version: '1.0.0',
-      instructions: 'I bridge OpenAPI specifications to MCP tools. I load .json, .yaml, and .yml files containing OpenAPI specs from a specified folder and automatically generate tools for each endpoint. Authentication is handled via environment variables with naming patterns like {API_NAME}_API_KEY.'
+      version: '1.0.2',
+      instructions: 'I bridge OpenAPI specifications to MCP tools. I load .json, .yaml, and .yml files containing OpenAPI specs from a specified folder and automatically generate tools for each endpoint. I also provide built-in tools for managing the OpenAPI specs themselves (list, get, update) and for discovering new APIs through the APIs.guru directory. Authentication is handled via environment variables with naming patterns like {API_NAME}_API_KEY.'
     });
 
     this.setupServerEvents();
@@ -57,6 +58,12 @@ export class OpenAPIMCPServer {
     // Load authentication config
     this.authConfig = loadAuthConfig(this.config.specsPath);
     
+    // Register built-in spec management tools
+    this.registerBuiltInTools();
+    
+    // Register APIs.guru tools
+    this.registerApisGuruTools();
+    
     // Load existing specs FIRST, before starting FastMCP server
     await this.loadExistingSpecs();
     
@@ -77,8 +84,296 @@ export class OpenAPIMCPServer {
     }
   }
 
-  async stop(): Promise<void> {
-    // No cleanup needed since we removed file watching
+  private registerBuiltInTools(): void {
+    // Tool to list all OpenAPI specs in the folder
+    this.fastMCP.addTool({
+      name: 'specbridge_list_specs',
+      description: 'List all OpenAPI specification files in the specs folder',
+      parameters: z.object({}),
+      execute: async () => {
+        try {
+          const files = await fs.promises.readdir(this.config.specsPath);
+          const specFiles = files.filter(file => isOpenAPIFile(file));
+          
+          const specInfo = await Promise.all(
+            specFiles.map(async (file) => {
+              const filePath = path.join(this.config.specsPath, file);
+              const stats = await fs.promises.stat(filePath);
+              return {
+                filename: file,
+                path: filePath,
+                size: `${(stats.size / 1024).toFixed(1)} KB`,
+                modified: stats.mtime.toISOString(),
+                extension: path.extname(file)
+              };
+            })
+          );
+
+          return `Found ${specFiles.length} OpenAPI specification files:\n\n` +
+            specInfo.map(spec => 
+              `📄 ${spec.filename}\n` +
+              `   Path: ${spec.path}\n` +
+              `   Size: ${spec.size}\n` +
+              `   Modified: ${spec.modified}\n` +
+              `   Format: ${spec.extension}`
+            ).join('\n\n');
+        } catch (error) {
+          return `Error listing specs: ${error instanceof Error ? error.message : String(error)}`;
+        }
+      }
+    });
+
+    // Tool to get the content of a specific OpenAPI spec
+    this.fastMCP.addTool({
+      name: 'specbridge_get_spec',
+      description: 'Get the content of a specific OpenAPI specification file',
+      parameters: z.object({
+        filename: z.string().describe('The filename of the spec to retrieve (e.g., "petstore.json", "github.yaml")')
+      }),
+      execute: async (args) => {
+        try {
+          const { filename } = args;
+          const filePath = path.join(this.config.specsPath, filename);
+          
+          // Security check - ensure the file is within the specs directory
+          const resolvedPath = path.resolve(filePath);
+          const resolvedSpecsPath = path.resolve(this.config.specsPath);
+          if (!resolvedPath.startsWith(resolvedSpecsPath)) {
+            return `Error: Access denied. File must be within the specs directory.`;
+          }
+          
+          // Check if file exists and is a valid OpenAPI file
+          if (!isOpenAPIFile(filename)) {
+            return `Error: "${filename}" is not a valid OpenAPI specification file. Must be .json, .yaml, or .yml.`;
+          }
+          
+          const content = await fs.promises.readFile(filePath, 'utf-8');
+          
+          return `Content of ${filename}:\n\n\`\`\`${path.extname(filename).slice(1)}\n${content}\n\`\`\``;
+        } catch (error) {
+          if ((error as any).code === 'ENOENT') {
+            return `Error: File "${args.filename}" not found in specs directory.`;
+          }
+          return `Error reading spec: ${error instanceof Error ? error.message : String(error)}`;
+        }
+      }
+    });
+
+    // Tool to update a specific OpenAPI spec
+    this.fastMCP.addTool({
+      name: 'specbridge_update_spec',
+      description: 'Update the content of a specific OpenAPI specification file',
+      parameters: z.object({
+        filename: z.string().describe('The filename of the spec to update (e.g., "petstore.json", "github.yaml")'),
+        content: z.string().describe('The new content for the specification file')
+      }),
+      execute: async (args) => {
+        try {
+          const { filename, content } = args;
+          const filePath = path.join(this.config.specsPath, filename);
+          
+          // Security check - ensure the file is within the specs directory
+          const resolvedPath = path.resolve(filePath);
+          const resolvedSpecsPath = path.resolve(this.config.specsPath);
+          if (!resolvedPath.startsWith(resolvedSpecsPath)) {
+            return `Error: Access denied. File must be within the specs directory.`;
+          }
+          
+          // Check if file is a valid OpenAPI file extension
+          if (!isOpenAPIFile(filename)) {
+            return `Error: "${filename}" is not a valid OpenAPI specification file. Must be .json, .yaml, or .yml.`;
+          }
+          
+          // Validate that the content is valid JSON/YAML by trying to parse it
+          try {
+            if (filename.endsWith('.json')) {
+              JSON.parse(content);
+            } else {
+              // For YAML, we'll do a basic validation - the OpenAPI parser will catch any issues later
+              if (!content.trim()) {
+                throw new Error('Content cannot be empty');
+              }
+            }
+          } catch (parseError) {
+            return `Error: Invalid ${filename.endsWith('.json') ? 'JSON' : 'YAML'} content. ${parseError instanceof Error ? parseError.message : String(parseError)}`;
+          }
+          
+          // Create backup of existing file if it exists
+          let backupCreated = false;
+          try {
+            await fs.promises.access(filePath);
+            const backupPath = `${filePath}.backup.${Date.now()}`;
+            await fs.promises.copyFile(filePath, backupPath);
+            backupCreated = true;
+          } catch (error) {
+            // File doesn't exist, no backup needed
+          }
+          
+          // Write the new content
+          await fs.promises.writeFile(filePath, content, 'utf-8');
+          
+          // Try to validate the updated spec
+          const updatedSpec = await parseOpenAPISpec(filePath);
+          if (updatedSpec) {
+            return `✅ Successfully updated "${filename}".\n` +
+              `${backupCreated ? '📄 Backup created.\n' : ''}` +
+              `🔧 Spec validated successfully - found ${updatedSpec.tools.length} tools.\n\n` +
+              `Tools that will be available after restart:\n${updatedSpec.tools.map(t => `  • ${t.name}`).join('\n')}\n\n` +
+              `🔄 **Please restart the MCP server to see the updated tools.**`;
+          } else {
+            return `⚠️ File "${filename}" was updated but failed OpenAPI validation. ` +
+              `The file was saved but tools may not work correctly. ` +
+              `Please check the OpenAPI specification format and restart the server.`;
+          }
+          
+        } catch (error) {
+          return `Error updating spec: ${error instanceof Error ? error.message : String(error)}`;
+        }
+      }
+    });
+
+    // Tool to download and save OpenAPI specs from URLs
+    this.fastMCP.addTool({
+      name: 'specbridge_download_spec',
+      description: 'Download an OpenAPI specification from a URL and save it to the specs folder with a custom name. This allows you to give meaningful names to downloaded specs instead of generic names like "openapi.json".',
+      parameters: z.object({
+        url: z.string().url().describe('The URL of the OpenAPI specification to download'),
+        filename: z.string().describe('The filename to save the spec as. Choose a descriptive name that identifies the API (e.g., "stripe-payments.json", "github-repos.yaml", "twilio-messaging.json"). Must end with .json, .yaml, or .yml.')
+      }),
+      execute: async (args) => {
+        try {
+          const { url, filename } = args;
+          
+          // Validate filename
+          if (!isOpenAPIFile(filename)) {
+            return `Error: "${filename}" is not a valid OpenAPI specification filename. Must end with .json, .yaml, or .yml.`;
+          }
+          
+          // Provide helpful naming suggestions
+          if (filename.toLowerCase() === 'openapi.json' || filename.toLowerCase() === 'openapi.yaml' || filename.toLowerCase() === 'openapi.yml') {
+            return `Error: Please choose a more descriptive filename instead of "${filename}". Consider names like:\n` +
+              `  • "stripe-payments.json" for Stripe API\n` +
+              `  • "github-repos.json" for GitHub API\n` +
+              `  • "twilio-messaging.json" for Twilio Messaging\n` +
+              `  • "openai-completions.json" for OpenAI API\n\n` +
+              `This helps identify which API is which when you have multiple specs.`;
+          }
+          
+          const filePath = path.join(this.config.specsPath, filename);
+          
+          // Security check - ensure the file is within the specs directory
+          const resolvedPath = path.resolve(filePath);
+          const resolvedSpecsPath = path.resolve(this.config.specsPath);
+          if (!resolvedPath.startsWith(resolvedSpecsPath)) {
+            return `Error: Access denied. File must be within the specs directory.`;
+          }
+          
+          // Check if file already exists
+          try {
+            await fs.promises.access(filePath);
+            return `Error: File "${filename}" already exists. Please choose a different filename or use specbridge_update_spec to modify it.`;
+          } catch (error) {
+            // File doesn't exist, which is what we want
+          }
+          
+          // Download the specification
+          const response = await axios.get(url, {
+            headers: {
+              'User-Agent': 'specbridge/1.0.2',
+              'Accept': 'application/json, application/x-yaml, text/yaml, text/x-yaml, */*'
+            },
+            timeout: 30000
+          });
+          
+          let content: string;
+          if (typeof response.data === 'string') {
+            content = response.data;
+          } else {
+            // If it's an object, stringify it as JSON
+            content = JSON.stringify(response.data, null, 2);
+          }
+          
+          // Ensure the specs directory exists
+          await fs.promises.mkdir(this.config.specsPath, { recursive: true });
+          
+          // Save the file
+          await fs.promises.writeFile(filePath, content, 'utf-8');
+          
+          // Try to validate the downloaded spec
+          const parsedSpec = await parseOpenAPISpec(filePath);
+          if (parsedSpec) {
+            return `✅ Successfully downloaded and saved "${filename}".\n` +
+              `📁 Saved to: ${filePath}\n` +
+              `🔧 Spec validated successfully - found ${parsedSpec.tools.length} tools.\n\n` +
+              `Tools that will be available after restart:\n${parsedSpec.tools.map(t => `  • ${t.name}`).join('\n')}\n\n` +
+              `🔄 **Please restart the MCP server to see the new tools.**`;
+          } else {
+            return `⚠️ Downloaded "${filename}" but it failed OpenAPI validation. ` +
+              `The file was saved but may not generate tools correctly. ` +
+              `Please check the content and restart the server.`;
+          }
+          
+        } catch (error) {
+          if (axios.isAxiosError(error)) {
+            const status = error.response?.status || 'Unknown';
+            return `Error downloading spec: HTTP ${status} - ${error.message}`;
+          }
+          return `Error downloading spec: ${error instanceof Error ? error.message : String(error)}`;
+        }
+      }
+    });
+  }
+
+  private registerApisGuruTools(): void {
+    // Create a mock ParsedSpec for APIs.guru to register its tools
+    const apisGuruSpec: ParsedSpec = {
+      apiName: 'apisguru',
+      filePath: '<built-in>',
+      spec: {}, // We don't need the full spec object
+      tools: [
+        {
+          name: 'apisguru_getProviders',
+          description: 'Get a list of all API providers in the APIs.guru directory (e.g., "googleapis.com", "github.com", "stripe.com"). Start here to explore what companies and services have APIs available for download.',
+          method: 'GET',
+          path: '/providers.json',
+          parameters: [],
+          responses: {},
+          security: [],
+          baseUrl: 'https://api.apis.guru/v2'
+        },
+        {
+          name: 'apisguru_getProvider',
+          description: 'List all APIs available from a specific provider. Provide a provider name (from apisguru_getProviders) to see their available API specifications with download URLs.',
+          method: 'GET',
+          path: '/{provider}.json',
+          parameters: [
+            {
+              name: 'provider',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' },
+              description: 'Provider name (e.g., "stripe.com", "github.com", "openai.com")'
+            }
+          ],
+          responses: {},
+          security: [],
+          baseUrl: 'https://api.apis.guru/v2'
+        },
+        {
+          name: 'apisguru_getMetrics',
+          description: 'Get basic statistics about the APIs.guru directory, including total number of APIs, endpoints, and providers. Use this to understand the scope of available APIs.',
+          method: 'GET',
+          path: '/metrics.json',
+          parameters: [],
+          responses: {},
+          security: [],
+          baseUrl: 'https://api.apis.guru/v2'
+        }
+      ]
+    };
+
+    // Register tools from the APIs.guru spec
+    this.registerToolsFromSpec(apisGuruSpec);
   }
 
   private async loadExistingSpecs(): Promise<void> {
