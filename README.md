@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/tbosak-specbridge-badge.png)](https://mseep.ai/app/tbosak-specbridge)
+
 <h1 align="center">SpecBridge
 <p>
 <a href="https://glama.ai/mcp/servers/@TBosak/specbridge">
