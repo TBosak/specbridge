@@ -1,7 +1,9 @@
 <h1 align="center">
   SpecBridge
-</h1>
 
+[![Verified on MseeP](https://mseep.ai/badge.svg)](https://mseep.ai/app/ab3b0729-c54e-4359-aed0-606b90995b59)
+  
+</h1>
 An MCP server that turns OpenAPI specifications into MCP tools. Scan a folder for OpenAPI spec files and automatically generate corresponding tools. No configuration files, no separate servers - just drop specs in a folder and get tools.
 
 
