@@ -1,11 +1,5 @@
-[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/tbosak-specbridge-badge.png)](https://mseep.ai/app/tbosak-specbridge)
-
-<h1 align="center">SpecBridge
-<p>
-<a href="https://glama.ai/mcp/servers/@TBosak/specbridge">
-  <img width="380" height="200" src="https://glama.ai/mcp/servers/@TBosak/specbridge/badge" alt="Specbridge MCP server" />
-</a>
-</p>
+<h1 align="center">
+  SpecBridge
 </h1>
 
 An MCP server that turns OpenAPI specifications into MCP tools. Scan a folder for OpenAPI spec files and automatically generate corresponding tools. No configuration files, no separate servers - just drop specs in a folder and get tools.
@@ -248,3 +242,12 @@ npm run dev -- --specs ./examples
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit issues and pull requests.
+
+<p>
+<a href="https://glama.ai/mcp/servers/@TBosak/specbridge">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@TBosak/specbridge/badge" alt="Specbridge MCP server" />
+</a>
+  <a href="https://mseep.ai/app/tbosak-specbridge">
+  <img src="https://mseep.net/pr/tbosak-specbridge-badge.png">
+  </a>
+</p>
