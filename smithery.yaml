@@ -1,0 +1,18 @@
+# Smithery configuration file: https://smithery.ai/docs/build/project-config
+
+startCommand:
+  type: stdio
+  commandFunction:
+    # A JS function that produces the CLI command based on the given config to start the MCP on stdio.
+    |-
+    (config) => ({ command: 'node', args: ['dist/cli.js', '--specs', config.specsPath] })
+  configSchema:
+    # JSON Schema defining the configuration options for the MCP.
+    type: object
+    properties:
+      specsPath:
+        type: string
+        default: /app/examples
+        description: Path to OpenAPI specs directory
+  exampleConfig:
+    specsPath: /app/examples
