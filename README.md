@@ -82,10 +82,6 @@ Otherwise:
 }
 ```
 
-### 6️⃣ Restart your MCP client
-
-That's it! Your OpenAPI specs are now available as MCP tools. ✅
-
 ## 💻 CLI Usage
 
 ### 🚀 Start the server
