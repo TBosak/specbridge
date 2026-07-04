@@ -40,6 +40,9 @@ Drop any `.json`, `.yaml`, or `.yml` OpenAPI specification files into your specs
 ```bash
 # Example: Download the Petstore spec
 curl -o ~/mcp-apis/petstore.json https://petstore3.swagger.io/api/v3/openapi.json
+
+# Example: Download the Xquik public API spec
+curl -o ~/mcp-apis/xquik.json https://xquik.com/openapi.json
 ```
 
 ### 4️⃣ Configure authentication (optional)
@@ -49,6 +52,7 @@ Create a `.env` file in your specs folder:
 ```bash
 # ~/mcp-apis/.env
 PETSTORE_API_KEY=your_api_key_here
+XQUIK_API_KEY=your_xquik_api_key_here
 GITHUB_TOKEN=ghp_your_github_token
 OPENAI_API_KEY=sk-your_openai_key
 ```
